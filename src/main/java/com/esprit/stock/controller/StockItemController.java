@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
+
 @RestController
 @RequestMapping("/stock")
 public class StockItemController {
@@ -15,7 +17,8 @@ public class StockItemController {
     @Autowired
     private StockItemService stockItemService;
 
-    @GetMapping("")
+    // Updated path to match the Angular service URL
+    @GetMapping("/items")
     public List<StockItem> getAllStockItems() {
         return stockItemService.getAllStockItems();
     }
