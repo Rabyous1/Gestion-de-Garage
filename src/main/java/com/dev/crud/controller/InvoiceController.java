@@ -4,115 +4,81 @@ import com.dev.crud.entity.Invoice;
 import com.dev.crud.exception.InvoiceNotFoundException;
 import com.dev.crud.service.IInvoiceService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/invoice")
 public class InvoiceController {
 
     @Autowired
     private IInvoiceService invoiceService;
 
+    // Home page (can be removed for API-only services)
     @GetMapping("/")
     public String showHomePage() {
-        return "homePage";
+        return "homePage"; // For testing purposes, remove if not required
     }
 
+    // Register invoice page (can be removed for API-only services)
     @GetMapping("/register")
-    public String showRegistration(Model model) {
-        model.addAttribute("invoice", new Invoice());
-        return "registerInvoicePage";
+    public String showRegistration() {
+        return "registerInvoicePage"; // For testing purposes, remove if not required
     }
 
+    // Save invoice (returns a response message in JSON format)
     @PostMapping("/save")
-    public String saveInvoice(
-            @ModelAttribute Invoice invoice,
-            Model model
-    ) {
+    public ResponseEntity<String> saveInvoice(@RequestBody Invoice invoice) {
         invoiceService.saveInvoice(invoice);
-        Long id = invoice.getId();
-        String message = "Record with id : '" + id + "' is saved successfully!";
-        model.addAttribute("message", message);
-        return "registerInvoicePage";
+        return new ResponseEntity<>("Invoice with ID: '" + invoice.getId() + "' saved successfully!", HttpStatus.CREATED);
     }
 
+    // Get all invoices (returns a list of invoices as JSON)
     @GetMapping("/getAllInvoices")
-    public String getAllInvoices(
-            @RequestParam(value = "message", required = false) String message,
-            Model model
-    ) {
-        List<Invoice> invoices = invoiceService.getAllInvoices();
-        model.addAttribute("list", invoices);
-        model.addAttribute("message", message);
-        return "allInvoicesPage";
+    public List<Invoice> getAllInvoices() {
+        return invoiceService.getAllInvoices();
     }
 
+    // Edit invoice (returns the invoice if found, else an error message)
     @GetMapping("/edit")
-    public String getEditPage(
-            Model model,
-            RedirectAttributes attributes,
-            @RequestParam Long id
-    ) {
-        String page = null;
+    public ResponseEntity<Invoice> getInvoiceByRequestParam(@RequestParam Long id) {
         try {
             Invoice invoice = invoiceService.getInvoiceById(id);
-            model.addAttribute("invoice", invoice);
-            page = "editInvoicePage";
+            return new ResponseEntity<>(invoice, HttpStatus.OK);
         } catch (InvoiceNotFoundException e) {
-            e.printStackTrace();
-            attributes.addAttribute("message", e.getMessage());
-            page = "redirect:getAllInvoices";
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
-        return page;
     }
 
+    // Update invoice (returns a response message in JSON format)
     @PostMapping("/update")
-    public String updateInvoice(
-            @ModelAttribute Invoice invoice,
-            RedirectAttributes attributes
-    ) {
+    public ResponseEntity<String> updateInvoice(@RequestBody Invoice invoice) {
         invoiceService.updateInvoice(invoice);
-        Long id = invoice.getId();
-        attributes.addAttribute("message", "Invoice with id: '" + id + "' is updated successfully!");
-        return "redirect:getAllInvoices";
+        return new ResponseEntity<>("Invoice with ID: '" + invoice.getId() + "' updated successfully!", HttpStatus.OK);
     }
 
-    @GetMapping("/delete")
-    public String deleteInvoice(
-            @RequestParam Long id,
-            RedirectAttributes attributes
-    ) {
+    // Delete invoice (returns a response message in JSON format)
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteInvoice(@RequestParam Long id) {
         try {
             invoiceService.deleteInvoiceById(id);
-            attributes.addAttribute("message", "Invoice with Id : '" + id + "' is deleted successfully!");
+            return new ResponseEntity<>("Invoice with ID: '" + id + "' deleted successfully!", HttpStatus.OK);
         } catch (InvoiceNotFoundException e) {
-            e.printStackTrace();
-            attributes.addAttribute("message", e.getMessage());
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
-        return "redirect:getAllInvoices";
     }
 
-    // New method to show a single invoice
+    // Get a single invoice by ID (returns a single invoice as JSON)
     @GetMapping("/invoice/{id}")
-    public String getInvoiceById(@PathVariable("id") Long id, Model model, RedirectAttributes attributes) {
+    public ResponseEntity<Invoice> getInvoiceByPathVariable(@PathVariable("id") Long id) {
         try {
             Invoice invoice = invoiceService.getInvoiceById(id);
-            model.addAttribute("invoice", invoice);
-            return "singleInvoicePage"; // Name of the Thymeleaf template for a single invoice
+            return new ResponseEntity<>(invoice, HttpStatus.OK);
         } catch (InvoiceNotFoundException e) {
-            e.printStackTrace();
-            attributes.addAttribute("message", e.getMessage());
-            return "redirect:getAllInvoices"; // Redirect if not found
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
-    @GetMapping("/test")
-    public String testPage() {
-        return "test"; // Reference without .html extension
-    }
-
 }
